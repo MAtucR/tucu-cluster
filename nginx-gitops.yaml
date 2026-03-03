@@ -32,3 +32,32 @@ spec:
     - port: 80
       targetPort: 80
       nodePort: 30099
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx-gitops-ingress
+  namespace: default
+  annotations:
+    # Esto le dice a K3s (Traefik) que use este Ingress
+    kubernetes.io/ingress.class: traefik
+    # Esto le dice a cert-manager que use tu emisor de DuckDNS
+    cert-manager.io/cluster-issuer: duckdns-issuer
+    # Forzamos a que todo vaya por HTTPS (Redirección automática)
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  tls:
+  - hosts:
+    - cloudtucu.duckdns.org
+    secretName: cloudtucu-tls-cert # <--- El secreto que ya tenemos en TRUE
+  rules:
+  - host: cloudtucu.duckdns.org
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: nginx-gitops-service # <--- Nombre de tu Service de arriba
+            port:
+              number: 80
